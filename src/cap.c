@@ -1,5 +1,8 @@
 #include "cap.h"
 #include <sys/mount.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 static cap_t emptycaps = NULL;
 
@@ -16,6 +19,9 @@ void init_caps() {
     if( cap_get_flag(prog, c, CAP_PERMITTED, &val) == 0 && val == CAP_SET )
       cap_set_flag(emptycaps, CAP_PERMITTED, 1, &c, CAP_SET);
     c = CAP_CHOWN;
+    if( cap_get_flag(prog, c, CAP_PERMITTED, &val) == 0 && val == CAP_SET )
+      cap_set_flag(emptycaps, CAP_PERMITTED, 1, &c, CAP_SET);
+    c = CAP_MKNOD;
     if( cap_get_flag(prog, c, CAP_PERMITTED, &val) == 0 && val == CAP_SET )
       cap_set_flag(emptycaps, CAP_PERMITTED, 1, &c, CAP_SET);
     c = CAP_SYS_ADMIN;
@@ -93,8 +99,28 @@ int cap_umount2(const char *target, int flags) {
   return r;
 }
 
+int cap_mknod(const char *path, mode_t mode, dev_t dev) {
+  static bool warned_mknod = false;
+
+  int r;
+
+  if (want_cap(CAP_MKNOD)) {
+    r = mknod(path, mode, dev);
+    drop_caps();
+  } else {
+    r = -1;
+    if(!warned_mknod) {
+      fprintf(stderr, "The process is missing CAP_MKNOD capability.\n"
+                      "Some crucial systems may not be initialized.\n");
+      warned_mknod = true;
+    }
+  }
+
+  return r;
+}
+
 int cap_chown(const char *path, uid_t owner, gid_t group) {
-  static bool warned = false;
+  static bool warned_chown = false;
   int r;
 
   if(want_cap(CAP_CHOWN)) {
@@ -103,10 +129,10 @@ int cap_chown(const char *path, uid_t owner, gid_t group) {
   }
   else {
     r = -1;
-    if(!warned) {
+    if(!warned_chown) {
       fprintf(stderr, "The process is missing CAP_CHOWN capability.\n"
                       "Some directories will be owned by the user although they should be owned by root.\n");
-      warned = true;
+      warned_chown = true;
     }
   }
 

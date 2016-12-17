@@ -21,7 +21,7 @@ AC_TYPE_PID_T
 # Checks for library functions.
 AC_FUNC_CHOWN
 AC_FUNC_MALLOC
-AC_CHECK_FUNCS([dup2 mkdir setenv clone])
+AC_CHECK_FUNCS([dup2 mkdir setenv clone mknod])
 
 PKG_CHECK_MODULES([libmount], [mount])
 PKG_CHECK_MODULES([libcap], [libcap])

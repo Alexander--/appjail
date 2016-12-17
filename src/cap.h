@@ -14,3 +14,4 @@ int cap_mount(const char *source, const char *target,
               const void *data);
 int cap_umount2(const char *target, int flags);
 int cap_chown(const char *path, uid_t owner, gid_t group);
+int cap_mknod(const char *path, mode_t mode, dev_t dev);
