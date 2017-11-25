@@ -10,6 +10,17 @@ AC_PROG_CC
 AC_PROG_MKDIR_P
 AC_PROG_INSTALL
 
+AC_PATH_PROG([GIT], [git], [no])
+
+if test "$GIT" != "no" ; then
+   GIT_ROOT=`readlink -f $srcdir/.git/`
+   GIT_REV=`GIT_DIR=$GIT_ROOT $GIT describe --always --dirty`;
+else
+   GIT_REV="unknown";
+fi
+
+AC_SUBST([GIT_REV])
+
 # Check for headers
 AC_CHECK_HEADERS([errno.h fcntl.h limits.h pwd.h sched.h stdio.h stdlib.h string.h sys/capability.h sys/mount.h sys/prctl.h sys/stat.h sys/types.h sys/wait.h unistd.h])
 
