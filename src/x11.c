@@ -27,21 +27,34 @@ void get_x11(const appjail_options *opts) {
   if( display == NULL )
     return;
 
-  snprintf(timeout, TIMEOUT_LEN-1, "%u", opts->x11_timeout);
+  if (opts->x11_cookie) {
+    cmd_argv[0] = "xauth";
+    cmd_argv[1] = "-f";
+    cmd_argv[2] = APPJAIL_SWAPDIR "/Xauthority";
+    cmd_argv[3] = "add";
+    cmd_argv[4] = display;
+    cmd_argv[5] = "MIT-MAGIC-COOKIE-1";
 
-  cmd_argv[0] = "xauth";
-  cmd_argv[1] = "-f";
-  cmd_argv[2] = APPJAIL_SWAPDIR "/Xauthority";
-  cmd_argv[3] = "generate";
-  cmd_argv[4] = display;
-  cmd_argv[5] = "MIT-MAGIC-COOKIE-1";
-  if( opts->x11_trusted )
-    cmd_argv[6] = "trusted";
-  else
-    cmd_argv[6] = "untrusted";
-  cmd_argv[7] = "timeout";
-  cmd_argv[8] = timeout;
-  cmd_argv[9] = NULL;
+    cmd_argv[6] = opts->x11_cookie;
+    cmd_argv[7] = NULL;
+  } else {
+    snprintf(timeout, TIMEOUT_LEN-1, "%u", opts->x11_timeout);
+
+    cmd_argv[0] = "xauth";
+    cmd_argv[1] = "-f";
+    cmd_argv[2] = APPJAIL_SWAPDIR "/Xauthority";
+    cmd_argv[3] = "generate";
+    cmd_argv[4] = display;
+    cmd_argv[5] = "MIT-MAGIC-COOKIE-1";
+    if( opts->x11_trusted )
+      cmd_argv[6] = "trusted";
+    else
+      cmd_argv[6] = "untrusted";
+    cmd_argv[7] = "timeout";
+    cmd_argv[8] = timeout;
+    cmd_argv[9] = NULL;
+  }
+
   // Create an empty file to silence an xauth error message
   if( (fd = open(cmd_argv[2], O_CREAT, 0600)) != -1)
     close(fd);

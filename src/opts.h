@@ -8,6 +8,8 @@ typedef struct {
   uid_t uid;
   char *user;
 
+  char *x11_cookie;
+
   bool allow_new_privs;
   bool keep_shm;
   bool keep_ipc_namespace;

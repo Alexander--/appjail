@@ -9,6 +9,8 @@
 
 #define NUM_ENTRIES 10
 
+#define TO_STR(s) #s
+
 static void version() {
   printf("appjail " APPJAIL_VERSION " by Thomas Bächler <thomas@archlinux.org>\n"
          "\n"
@@ -42,6 +44,7 @@ static void usage() {
          "  -X, --x11                Allow X11 access.\n"
          "  --x11-trusted            Generate a trusted X11 cookie (an untrusted cookie is used by default).\n"
          "  --x11-timeout <N>        If no X11 client is connected for N seconds, the cookie is revoked.\n"
+         "  --x11-cookie <STRING>    Use a manually supplied X11 security cookie.\n"
          "  -N, --private-network    Isolate from the host network.\n"
          "  -n, --no-private-network Do not isolate from the host network.\n"
          "  -R, --run <MODE>         Determine how to handle the /run directory.\n"
@@ -88,6 +91,7 @@ char *remove_trailing_slash(const char *p) {
 #define OPT_SET_ENV 268
 #define OPT_TMPFS_SIZE 269
 #define OPT_KEEP_OUTPUT 270
+#define OPT_X11_COOKIE 271
 
 appjail_options *parse_options(int argc, char *argv[], const appjail_config *config) {
   int opt, i;
@@ -107,6 +111,7 @@ appjail_options *parse_options(int argc, char *argv[], const appjail_config *con
     { "x11",                no_argument,       0,  'X'                    },
     { "x11-trusted",        no_argument,       0,  OPT_X11_TRUSTED        },
     { "x11-timeout",        required_argument, 0,  OPT_X11_TIMEOUT        },
+    { "x11-cookie",         required_argument, 0,  OPT_X11_COOKIE         },
     { "private-network",    no_argument,       0,  'N'                    },
     { "no-private-network", no_argument,       0,  'n'                    },
     { "run",                required_argument, 0,  'R'                    },
@@ -142,6 +147,7 @@ appjail_options *parse_options(int argc, char *argv[], const appjail_config *con
   opts->homedir = NULL;
   opts->keep_x11 = false;
   opts->x11_trusted = false;
+  opts->x11_cookie = NULL;
   opts->x11_timeout = 60;
   opts->unshare_network = config->default_private_network;
   opts->run_mode = config->default_run_mode;
@@ -227,6 +233,9 @@ appjail_options *parse_options(int argc, char *argv[], const appjail_config *con
         if(!string_to_unsigned_integer(&(opts->x11_timeout), optarg))
           errExitNoErrno("Invalid argument to --x11-timeout.");
         break;
+      case OPT_X11_COOKIE:
+        opts->x11_cookie = strdup(optarg);
+	break;
       case 'N':
         opts->unshare_network = true;
         break;
@@ -318,6 +327,7 @@ void free_options(appjail_options *opts) {
   strlist_free(opts->keepenv);
   strlist_free(opts->setenv);
   free(opts->user);
+  free(opts->x11_cookie);
   free(opts);
 }
 
