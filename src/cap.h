@@ -15,3 +15,5 @@ int cap_mount(const char *source, const char *target,
 int cap_umount2(const char *target, int flags);
 int cap_chown(const char *path, uid_t owner, gid_t group);
 int cap_mknod(const char *path, mode_t mode, dev_t dev);
+int cap_setreuid(uid_t new_uid);
+int cap_setregid(uid_t new_gid);

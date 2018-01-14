@@ -9,7 +9,8 @@
 
 #define NUM_ENTRIES 10
 
-#define TO_STR(s) #s
+#define STR_HELPER(s) #s
+#define TO_STR(s) STR_HELPER(s)
 
 static void version() {
   printf("appjail " APPJAIL_VERSION " by Thomas Bächler <thomas@archlinux.org>\n"
@@ -63,6 +64,8 @@ static void usage() {
          "  --keep-fd FD             Do not close the file descriptor FD.\n"
          "  --tmpfs-size SZ          Limit the size of the tmpfs instance used for the jail's temporary\n"
          "                           directory to SZ. The suffixes K, M or G are allowed.\n"
+         "  --setuid UID             Run jailed process under specified user ID,\n"
+         "                           which must be between " TO_STR(MIN_SAFE_UID) " and " TO_STR(MAX_SAFE_UID) ".\n"
          "\n");
 }
 
@@ -92,6 +95,7 @@ char *remove_trailing_slash(const char *p) {
 #define OPT_TMPFS_SIZE 269
 #define OPT_KEEP_OUTPUT 270
 #define OPT_X11_COOKIE 271
+#define OPT_SETUID 272
 
 appjail_options *parse_options(int argc, char *argv[], const appjail_config *config) {
   int opt, i;
@@ -127,6 +131,7 @@ appjail_options *parse_options(int argc, char *argv[], const appjail_config *con
     { "keep-env",           required_argument, 0,  OPT_KEEP_ENV           },
     { "set-env",            required_argument, 0,  OPT_SET_ENV            },
     { "read-only",          no_argument,       0,  OPT_READ_ONLY          },
+    { "setuid",             required_argument, 0,  OPT_SETUID             },
     { "tmpfs-size",         required_argument, 0,  OPT_TMPFS_SIZE         },
     { 0,                    0,                 0,  0                      }
   };
@@ -136,6 +141,7 @@ appjail_options *parse_options(int argc, char *argv[], const appjail_config *con
 
   /* special options */
   opts->uid = getuid();
+  opts->switch_to_uid = 0;
   errno = 0;
   if((pw = getpwuid(opts->uid)) == NULL)
     errExit("getpwuid");
@@ -283,6 +289,13 @@ appjail_options *parse_options(int argc, char *argv[], const appjail_config *con
         break;
       case OPT_READ_ONLY:
         opts->readonly = true;
+        break;
+      case OPT_SETUID:
+        if(!string_to_unsigned_integer(&(opts->switch_to_uid), optarg))
+          errExitNoErrno("Invalid argument to --setuid.");
+
+        if (opts->switch_to_uid < MIN_SAFE_UID || opts->switch_to_uid > MAX_SAFE_UID)
+          errExitNoErrno("--setuid argument is outside the allowed range.");
         break;
       case OPT_TMPFS_SIZE:
         if(!string_to_size(&size, optarg))

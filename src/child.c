@@ -16,6 +16,7 @@
 #include "run.h"
 #include "tty.h"
 #include "x11.h"
+#include "setuid.h"
 #include <unistd.h>
 #include <sys/mount.h>
 
@@ -96,6 +97,14 @@ int child_main(void *arg) {
   /* Make the file system read-only */
   if(opts->readonly)
     make_read_only(opts);
+
+  if (opts->switch_to_uid != 0) {
+    fprintf(stdout, "Switchinf to id %d", opts->switch_to_uid);
+
+    if (switch_ids(opts->switch_to_uid)) {
+      errExit("setuid");
+    }
+  }
 
   /* We drop all capabilities from the permitted capability set */
   drop_caps_forever();

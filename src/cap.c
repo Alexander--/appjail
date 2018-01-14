@@ -3,6 +3,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <grp.h>
+#include <pwd.h>
 
 static cap_t emptycaps = NULL;
 
@@ -22,6 +24,12 @@ void init_caps() {
     if( cap_get_flag(prog, c, CAP_PERMITTED, &val) == 0 && val == CAP_SET )
       cap_set_flag(emptycaps, CAP_PERMITTED, 1, &c, CAP_SET);
     c = CAP_MKNOD;
+    if( cap_get_flag(prog, c, CAP_PERMITTED, &val) == 0 && val == CAP_SET )
+      cap_set_flag(emptycaps, CAP_PERMITTED, 1, &c, CAP_SET);
+    c = CAP_SETGID;
+    if( cap_get_flag(prog, c, CAP_PERMITTED, &val) == 0 && val == CAP_SET )
+      cap_set_flag(emptycaps, CAP_PERMITTED, 1, &c, CAP_SET);
+    c = CAP_SETUID;
     if( cap_get_flag(prog, c, CAP_PERMITTED, &val) == 0 && val == CAP_SET )
       cap_set_flag(emptycaps, CAP_PERMITTED, 1, &c, CAP_SET);
     c = CAP_SYS_ADMIN;
@@ -133,6 +141,52 @@ int cap_chown(const char *path, uid_t owner, gid_t group) {
       fprintf(stderr, "The process is missing CAP_CHOWN capability.\n"
                       "Some directories will be owned by the user although they should be owned by root.\n");
       warned_chown = true;
+    }
+  }
+
+  return r;
+}
+
+int cap_setregid(uid_t new_gid) {
+  static bool warned_setgid = false;
+  int r = -1;
+
+  if(want_cap(CAP_SETGID)) {
+    struct passwd *pw = getpwuid(new_gid);
+
+    if (pw != NULL) {
+      initgroups(pw->pw_name, new_gid);
+
+      r = setregid(new_gid, new_gid);
+    }
+
+    drop_caps();
+  } else {
+    r = -1;
+    if (!warned_setgid) {
+      fprintf(stderr, "The process is missing CAP_SETGID capability.\n"
+                      "Some processes may run with priviledges of current user.\n");
+      warned_setgid = true;
+    }
+  }
+
+  return r;
+}
+
+int cap_setreuid(uid_t new_uid) {
+  static bool warned_setuid = false;
+  int r = -1;
+
+  if(want_cap(CAP_SETUID)) {
+    r = setreuid(new_uid, new_uid);
+
+    drop_caps();
+  } else {
+    r = -1;
+    if (!warned_setuid) {
+      fprintf(stderr, "The process is missing CAP_SETUID capability.\n"
+                      "Some processes may run with priviledges of current user.\n");
+      warned_setuid = true;
     }
   }
 

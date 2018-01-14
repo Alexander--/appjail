@@ -39,6 +39,25 @@ PKG_CHECK_MODULES([libcap], [libcap])
 PKG_CHECK_MODULES([libnl], [libnl-route-3.0])
 PKG_CHECK_MODULES([glib2], [glib-2.0])
 
+AC_ARG_ENABLE([min-safe-uid],
+[  --enable-min-safe-uid    Lowest uid, that appjail can setuid to],
+[if env test "$enableval" -gt 0 2>/dev/null ; then
+  minsafeuid="$enableval";
+else
+  AC_MSG_ERROR([bad value ${enableval} for --enable-min-safe-uid])
+fi],[minsafeuid=99999])
+
+AC_ARG_ENABLE([max-safe-uid],
+[  --enable-max-safe-uid    Highest uid, that appjail can setuid to],
+[if env test "$enableval" -gt 0 2>/dev/null ; then
+  maxsafeuid="$enableval";
+else
+  AC_MSG_ERROR([bad value ${enableval} for --enable-max-safe-uid])
+fi],[maxsafeuid=999999])
+
+AC_DEFINE_UNQUOTED([MIN_SAFE_UID], [${minsafeuid}], [Lowest uid, that appjail can setuid to.])
+AC_DEFINE_UNQUOTED([MAX_SAFE_UID], [${maxsafeuid}], [Highest uid, that appjail can setuid to.])
+
 AM_CONFIG_HEADER([src/config.h])
 AC_CONFIG_FILES([Makefile src/Makefile])
 

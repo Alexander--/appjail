@@ -6,6 +6,8 @@
 
 typedef struct {
   uid_t uid;
+  uid_t switch_to_uid;
+
   char *user;
 
   char *x11_cookie;
